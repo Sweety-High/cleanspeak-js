@@ -1,22 +1,40 @@
 'use strict';
 
-var uuid = require('node-cassandra-cql').types.uuid;
-var CleanSpeak = require('../cleanspeak');
-var chance = require('chance').Chance();
-var nock = require('nock');
+var chai = require('chai');
+var expect = chai.expect;
 var sinon = require('sinon');
 
+var sinonChai = require('sinon-chai');
+chai.use(sinonChai);
+
+var uuid = require('uuid');
+var CleanSpeak = require('../index');
+var chance = require('chance').Chance();
+var nock = require('nock');
+
+
 describe.only('CleanSpeak', function() {
-  var cleanSpeak, mockRequest, content;
+  var cleanSpeak, mockRequest, content, defaultOptions;
+
+  beforeEach(function() {
+    defaultOptions = {
+      host: 'http://cleanspeak.example.com:8001',
+      authToken: 'abc123',
+      databaseUrl: 'https://user:pass@postgres.example.com/fesafewa',
+      notificationHost: 'http://api.example.com',
+      notificationUsername: 'user',
+      notificationPassword: 'pass'
+    };
+  });
 
   describe('filter', function() {
     beforeEach(function() {
-      cleanSpeak = new CleanSpeak({host: 'http://example-cs.com', port: 8001, authToken: 'abc123'});
+      cleanSpeak = new CleanSpeak(defaultOptions);
     });
 
     describe('when the content is filtered', function() {
       beforeEach(function() {
-        mockRequest = nock('http://example-cs.com:8001')
+        mockRequest = nock('http://cleanspeak.example.com:8001')
           .post('/content/item/filter')
           .reply(200, {replacement: 'fine'});
       });
@@ -34,7 +52,7 @@ describe.only('CleanSpeak', function() {
 
     describe('when the content is filtered', function() {
       beforeEach(function() {
-        mockRequest = nock('http://example-cs.com:8001')
+        mockRequest = nock('http://cleanspeak.example.com:8001')
           .post('/content/item/filter')
           .reply(200, { matches:
             [ { length: 4,
@@ -75,13 +93,15 @@ describe.only('CleanSpeak', function() {
           return callback(null, fakeClient);
         }
       };
-      cleanSpeak = new CleanSpeak({host: 'http://example-cs.com', port: 8001, authToken: 'abc123', pg: fakePg});
+      var options = defaultOptions;
+      options.pg = fakePg;
+      cleanSpeak = new CleanSpeak(options);
     });
 
     it('makes a call to CleanSpeak', function(done) {
       var id = uuid();
       var name = chance.string({length: 10});
-      mockRequest = nock('http://example-cs.com:8001')
+      mockRequest = nock('http://cleanspeak.example.com:8001')
         .post('/system/application')
         .reply(200, { application:
         { id: id,
@@ -112,7 +132,7 @@ describe.only('CleanSpeak', function() {
     var clock;
 
     beforeEach(function() {
-      cleanSpeak = new CleanSpeak({host: 'http://example-cs.com', port: 8001, authToken: 'abc123'});
+      cleanSpeak = new CleanSpeak(defaultOptions);
       var timestamp = new Date().valueOf();
       clock = sinon.useFakeTimers(timestamp, 'Date');
     });
@@ -125,7 +145,7 @@ describe.only('CleanSpeak', function() {
       var contentId = uuid();
       var applicationId = uuid();
       var senderId = uuid();
-      mockRequest = nock('http://example-cs.com:8001')
+      mockRequest = nock('http://cleanspeak.example.com:8001')
         .post('/content/item/moderate/' + contentId, {
           content: {
             applicationId: applicationId,

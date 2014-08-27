@@ -11,11 +11,19 @@
     "type": "git",
     "url": "https://github.com/Sweety-High/cleanspeak-js.git"
   },
-  "keywords": [
-
-  ],
-  "dependencies": {},
-  "devDependencies": {},
+  "keywords": [],
+  "dependencies": {
+    "pg": "^3.4.1"
+  },
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "chance": "^0.5.9",
+    "mocha": "^1.21.4",
+    "nock": "^0.45.0",
+    "sinon": "^1.10.3",
+    "sinon-chai": "^2.5.0",
+    "uuid": "^1.4.1"
+  },
   "license": "MIT",
   "engines": {
     "node": "0.10.x"
@@ -33,5 +41,6 @@
       "name": "ThreeHams",
       "email": "threehams@gmail.com"
     }
-  ]
+  ],
+  "private": true
 }

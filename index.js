@@ -1,27 +1,23 @@
 'use strict';
 var request = require('request');
-var config = require('../config');
 var url = require('url');
 
 /*
  * Constructor, takes configuration from either passed-in variables or the environment.
  *
- * @param {string} opts.host                    Hostname for Cleanspeak server
- * @param {string} opts.port                    Pork for Cleanspeak server
+ * @param {string} opts.host                    Hostname for Cleanspeak server, including port
  * @param {string} opts.authToken               Auth token for Cleanspeak server (optional)
  * @param {string} opts.notificationHost        Hostname for the notification server. Used for accepting/rejecting moderation.
  * @param {string} opts.notificationUsername    Username for the notification server.
  * @param {string} opts.notificationPassword    Password for the notification server.
  */
 function CleanSpeak(opts) {
-  var host = opts.host || config.cleanSpeak.host;
-  var port = opts.port || config.cleanSpeak.port;
-  this.authToken = opts.authToken || config.cleanSpeak.authToken;
-  this.host = host + ':' + port;
-  this.databaseUrl = opts.databaseUrl || config.cleanSpeak.databaseUrl;
-  this.notificationHost = opts.notificationHost || config.cleanSpeak.notificationHost;
-  this.notificationUsername = opts.notificationUsername || config.cleanSpeak.notificationUsername;
-  this.notificationPassword = opts.notificationPassword || config.cleanSpeak.notificationPassword;
+  this.host = opts.host;
+  this.authToken = opts.authToken;
+  this.databaseUrl = opts.databaseUrl;
+  this.notificationHost = opts.notificationHost;
+  this.notificationUsername = opts.notificationUsername;
+  this.notificationPassword = opts.notificationPassword;
   this.pg = opts.pg || require('pg'); // injected for testing
 }
 
