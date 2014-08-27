@@ -152,7 +152,12 @@ CleanSpeak.prototype.createApplication = function(name, notificationPath, opts, 
 };
 
 /*
+ * Creates a notification server and links it to the application.
  *
+ * @param {string} applicationId            Application ID to link to the server
+ * @param {string} path                     Path that the notification server will contact on moderation accept/reject
+ * @param {function} callback               Callback when complete (err)
+ * @returns {string} err                    Error message if error occurs
  */
 CleanSpeak.prototype._createNotificationServer = function(applicationId, path, callback) {
   var that = this;
