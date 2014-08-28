@@ -155,13 +155,14 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
 /*
  * Creates a new application (with a new moderation queue) and attaches a notification server.
  *
- * @param {string} name                 Name for the application, as shown in Cleanspeak
- * @param {string} notificationPath     Path that the notification server will contact on moderation accept/reject
- * @param {callback} function           Callback when complete (err, result)
- * @returns {string} err                Error message if error occurs
+ * @param {string} name                   Name for the application, as shown in Cleanspeak
+ * @param {string} opts.notificationPath  Path that the notification server will contact on moderation accept/reject
+ * @param {uuid} opts.id                  Optional id to use for the application instead of randomizing
+ * @param {callback} function             Callback when complete (err, result)
+ * @returns {string} err                  Error message if error occurs
  *
  */
-CleanSpeak.prototype.createApplication = function(name, notificationPath, opts, callback) {
+CleanSpeak.prototype.createApplication = function(name, opts, callback) {
   var that = this;
   if (typeof opts === 'function') {
     callback = opts;
@@ -182,13 +183,14 @@ CleanSpeak.prototype.createApplication = function(name, notificationPath, opts, 
   };
 
   var uri = url.resolve(this.host, '/system/application');
+  if (opts.id) uri += '/' + opts.id;
 
   request.post(uri, {headers: headers, json: body}, function(err, response, body) {
     if (callback) {
       if (err) return callback(err);
 
       var applicationId = body.application.id;
-      that._createNotificationServer(applicationId, notificationPath, function(err) {
+      that._createNotificationServer(applicationId, opts.notificationPath, function(err) {
         if (err) return callback(err);
 
         return callback(null, {id: applicationId});

@@ -98,7 +98,7 @@ describe('CleanSpeak', function() {
       cleanSpeak = new CleanSpeak(options);
     });
 
-    it('makes a call to CleanSpeak', function(done) {
+    it('returns the application ID', function(done) {
       var id = uuid();
       var name = chance.string({length: 10});
       mockRequest = nock('http://cleanspeak.example.com:8001')
@@ -106,7 +106,7 @@ describe('CleanSpeak', function() {
         .reply(200, { application:
         { id: id,
           moderationConfiguration:
-          { archiveConfiguration: [Object],
+          { archiveConfiguration: [{}],
             contentDeletable: false,
             contentEditable: false,
             contentUserActionsEnabled: false,
@@ -119,7 +119,36 @@ describe('CleanSpeak', function() {
           name: name }
         });
 
-      cleanSpeak.createApplication(name, '/contests/' + id + '/moderate', function(err, result) {
+      cleanSpeak.createApplication(name, {notificationPath: '/contests/' + id + '/moderate'}, function(err, result) {
+        expect(result.id).to.equal(id);
+
+        done();
+        mockRequest.done();
+      });
+    });
+
+    it('overrides the application ID', function(done) {
+      var id = uuid();
+      var name = chance.string({length: 10});
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/system/application/' + id)
+        .reply(200, { application:
+        { id: id,
+          moderationConfiguration:
+          { archiveConfiguration: [{}],
+            contentDeletable: false,
+            contentEditable: false,
+            contentUserActionsEnabled: false,
+            defaultActionIsQueueForApproval: false,
+            emailOnAlerts: false,
+            emailOnContentFlagged: false,
+            emailOnUserFlagged: false,
+            persistent: true,
+            storeContent: true },
+          name: name }
+        });
+
+      cleanSpeak.createApplication(name, {notificationPath: '/contests/' + id + '/moderate', id: id}, function(err, result) {
         expect(result.id).to.equal(id);
 
         done();
