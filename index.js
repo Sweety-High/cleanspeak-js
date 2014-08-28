@@ -107,6 +107,52 @@ CleanSpeak.prototype.moderate = function(content, contentId, userId, application
 };
 
 /*
+ * Adds a site user to the CleanSpeak system.
+ *
+ * @param {string} userId                 UUID for the user.
+ * @param {array} opts.applicationIds     Array of application IDs with which to associate this user. If omitted, the
+ *                                          user will be available in all applications (optional).
+ * @param {object} opts.attributes        Object containing any number of attributes to show in CleanSpeak (optional).
+ * @param {array} opts.displayNames       List of display names to associate with the user (optional).
+ * @param {string} opts.birthDate         User's birth date in YYYY-MM-DD format (optional).
+ * @param {string} opts.email             User's email address (optional).
+ * @param {number} opts.lastLoginInstant  Timestamp of user's last login time, in either Unix timestamp or Date format
+ *                                          (optional).
+ * @param {number} opts.name              User's name (optional).
+ * @returns {string} err                  Error message if an error occurs
+ *
+ */
+CleanSpeak.prototype.addUser = function(userId, opts, callback) {
+  if (typeof opts === 'function') {
+    callback = opts;
+    opts = {};
+  }
+  if (typeof opts.lastLoginInstant === 'Date') opts.lastLoginInstant = opts.lastLoginInstant.valueOf();
+
+  var headers = {
+    Authentication: this.authToken
+  };
+  var body = {
+    user: {
+      applicationIds: opts.applicationIds,
+      attributes: opts.attributes,
+      displayNames: opts.displayNames,
+      createInstant: new Date().valueOf(),
+      birthDate: opts.birthDate,
+      email: opts.email,
+      lastLoginInstant: opts.lastLoginInstant,
+      name: opts.name
+    }
+  };
+  var uri = url.resolve(this.host, '/content/user/' + userId);
+
+  request.post(uri, {headers: headers, json: body}, function(err, result) {
+    if (err) return callback(err);
+    return callback(null);
+  });
+};
+
+/*
  * Creates a new application (with a new moderation queue) and attaches a notification server.
  *
  * @param {string} name                 Name for the application, as shown in Cleanspeak

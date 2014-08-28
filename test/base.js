@@ -13,7 +13,7 @@ var chance = require('chance').Chance();
 var nock = require('nock');
 
 
-describe.only('CleanSpeak', function() {
+describe('CleanSpeak', function() {
   var cleanSpeak, mockRequest, content, defaultOptions;
 
   beforeEach(function() {
@@ -32,7 +32,7 @@ describe.only('CleanSpeak', function() {
       cleanSpeak = new CleanSpeak(defaultOptions);
     });
 
-    describe('when the content is filtered', function() {
+    describe('when the content is not filtered', function() {
       beforeEach(function() {
         mockRequest = nock('http://cleanspeak.example.com:8001')
           .post('/content/item/filter')
@@ -179,6 +179,40 @@ describe.only('CleanSpeak', function() {
 
       cleanSpeak.moderate(content, contentId, senderId, applicationId, function(err) {
         expect(err).to.be.null;
+
+        done();
+        mockRequest.done();
+      });
+    });
+  });
+
+  describe('addUser', function() {
+    var clock, userId;
+
+    beforeEach(function() {
+      cleanSpeak = new CleanSpeak(defaultOptions);
+      var timestamp = new Date().valueOf();
+      clock = sinon.useFakeTimers(timestamp, 'Date');
+    });
+
+    afterEach(function() {
+      clock.restore();
+    });
+
+    beforeEach(function() {
+      userId = uuid();
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/content/user/' + userId, {
+          user: {
+            createInstant: new Date().valueOf()
+          }
+        })
+        .reply(200, {});
+    });
+
+    it('runs without error', function(done) {
+      cleanSpeak.addUser(userId, function(err) {
+        expect(err).to.not.exist;
 
         done();
         mockRequest.done();
