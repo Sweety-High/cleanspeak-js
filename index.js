@@ -69,6 +69,8 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
  * @param {string} contentId            UUID for the content.
  * @param {string} userId               UUID for the user who owns the content.
  * @param {string} applicationId        UUID for the application the content is associated with (affects notifications).
+ * @param {bool} opts.requiresApproval  Whether or not the content is sent to the queue even if no filter is hit
+ * @param {bool} opts.generatesAlert    Whether or not the content is sent to the alert queue
  * @param {function} callback           Optional callback function (err)
  * @returns {string} err                Error message if an error occurs
  *
@@ -82,7 +84,19 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
  * ]
  *
  */
-CleanSpeak.prototype.moderate = function(content, contentId, userId, applicationId, callback) {
+CleanSpeak.prototype.moderate = function(content, contentId, userId, applicationId, opts, callback) {
+  if (typeof opts === 'function') {
+    callback = opts;
+    opts = {};
+  }
+
+  var queueOption = null;
+  if (opts.generatesAlert) {
+    queueOption = 'generatesAlert';
+  } else if (opts.requiresApproval) {
+    queueOption = 'requiresApproval';
+  }
+
   var headers = {
     Authentication: this.authToken,
     'Content-Type': 'application/json'
@@ -94,7 +108,7 @@ CleanSpeak.prototype.moderate = function(content, contentId, userId, application
       parts: content,
       senderId: userId
     },
-    moderation: 'requiresApproval'
+    moderation: queueOption
   };
   var uri = url.resolve(this.host, '/content/item/moderate/' + contentId);
 

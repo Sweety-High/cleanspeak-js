@@ -165,7 +165,6 @@ describe('CleanSpeak', function() {
       var timestamp = new Date().valueOf();
       clock = sinon.useFakeTimers(timestamp, 'Date');
     });
-
     afterEach(function() {
       clock.restore();
     });
@@ -206,7 +205,7 @@ describe('CleanSpeak', function() {
         }
       ];
 
-      cleanSpeak.moderate(content, contentId, senderId, applicationId, function(err) {
+      cleanSpeak.moderate(content, contentId, senderId, applicationId, {requiresApproval: true}, function(err) {
         expect(err).to.be.null;
 
         done();
@@ -223,7 +222,6 @@ describe('CleanSpeak', function() {
       var timestamp = new Date().valueOf();
       clock = sinon.useFakeTimers(timestamp, 'Date');
     });
-
     afterEach(function() {
       clock.restore();
     });
