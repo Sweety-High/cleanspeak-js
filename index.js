@@ -38,22 +38,20 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
     opts = {};
   }
 
+  var headers = {
+    Authentication: this.authToken
+  };
   var body = {
-    content: content,
-    filter: {
-      blacklist: {
-        enabled:true
-      }
-    }
+    content: content
   };
   var uri = url.resolve(this.host, '/content/item/filter');
 
-  request.post(uri, {json: body}, function(err, response, body) {
+  request.post(uri, {json: body, headers: headers}, function(err, response, responseBody) {
     if (err) return callback(err);
-    if (response.statusCode !== 200) return callback(that.handleErrors(body));
+    if (response.statusCode == 401) return callback("API token missing or incorrect");
+    if (response.statusCode !== 200) return callback(that.convertErrors(responseBody));
 
-
-    return callback(null, that.handleFilterResponse(body));
+    return callback(null, that.convertFilterResponse(responseBody));
   });
 };
 
@@ -85,10 +83,13 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
  *
  */
 CleanSpeak.prototype.moderate = function(content, contentId, userId, applicationId, opts, callback) {
+  var that = this;
   if (typeof opts === 'function') {
     callback = opts;
     opts = {};
   }
+
+  var method = opts.update ? 'PUT' : 'POST';
 
   var queueOption = null;
   if (opts.generatesAlert) {
@@ -112,11 +113,12 @@ CleanSpeak.prototype.moderate = function(content, contentId, userId, application
   };
   var uri = url.resolve(this.host, '/content/item/moderate/' + contentId);
 
-  request.post(uri, {headers: headers, body: JSON.stringify(body)}, function(err) {
-    if (callback) {
-      if (err) return callback(err);
-      return callback(null);
-    }
+  request({method: method, uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response, responseBody) {
+    if (err) return callback(err);
+    if (response.statusCode == 401) return callback("API token missing or incorrect");
+    if (response.statusCode !== 200) return callback(that.convertErrors(responseBody));
+
+    return callback(null);
   });
 };
 
@@ -200,16 +202,14 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
   if (opts.id) uri += '/' + opts.id;
 
   request.post(uri, {headers: headers, json: body}, function(err, response, body) {
-    if (callback) {
+    if (err) return callback(err);
+
+    var applicationId = body.application.id;
+    that._createNotificationServer(applicationId, opts.notificationPath, function(err) {
       if (err) return callback(err);
 
-      var applicationId = body.application.id;
-      that._createNotificationServer(applicationId, opts.notificationPath, function(err) {
-        if (err) return callback(err);
-
-        return callback(null, {id: applicationId});
-      });
-    }
+      return callback(null, {id: applicationId});
+    });
   });
 };
 
@@ -253,7 +253,7 @@ CleanSpeak.prototype._createNotificationServer = function(applicationId, path, c
  * @returns result.replacement  filtered text if filtered, original text if not
  *
  */
-CleanSpeak.prototype.handleFilterResponse = function(body) {
+CleanSpeak.prototype.convertFilterResponse = function(body) {
   if (body.matches) {
     return {filtered: true, replacement: body.replacement};
   } else {
@@ -266,7 +266,7 @@ CleanSpeak.prototype.handleFilterResponse = function(body) {
  *
  * @returns {string} result.message             Human-readable rrror message
  */
-CleanSpeak.prototype.handleErrors = function(body) {
+CleanSpeak.prototype.convertErrors = function(body) {
   return body.generalErrors[0].message;
 };
 

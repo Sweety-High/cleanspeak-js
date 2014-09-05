@@ -212,6 +212,27 @@ describe('CleanSpeak', function() {
         mockRequest.done();
       });
     });
+
+    it('sends a PUT call with update: true', function(done) {
+      var contentId = uuid();
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .put('/content/item/moderate/' + contentId)
+        .reply(200, {});
+      content = [
+        {
+          name: 'username',
+          content: 'iamagirl',
+          type: 'text'
+        }
+      ];
+
+      cleanSpeak.moderate(content, contentId, uuid(), uuid(), {update: true}, function(err) {
+        expect(err).to.be.null;
+
+        done();
+        mockRequest.done();
+      });
+    });
   });
 
   describe('addUser', function() {
