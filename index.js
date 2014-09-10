@@ -49,9 +49,9 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
   request.post(uri, {json: body, headers: headers}, function(err, response, responseBody) {
     if (err) return callback(err);
     if (response.statusCode == 401) return callback("API token missing or incorrect");
-    if (response.statusCode !== 200) return callback(that.convertErrors(responseBody));
+    if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
-    return callback(null, that.convertFilterResponse(responseBody));
+    return callback(null, that._convertFilterResponse(responseBody));
   });
 };
 
@@ -116,7 +116,7 @@ CleanSpeak.prototype.moderate = function(content, contentId, userId, application
   request({method: method, uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response, responseBody) {
     if (err) return callback(err);
     if (response.statusCode == 401) return callback("API token missing or incorrect");
-    if (response.statusCode !== 200) return callback(that.convertErrors(responseBody));
+    if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null);
   });
@@ -253,7 +253,7 @@ CleanSpeak.prototype._createNotificationServer = function(applicationId, path, c
  * @returns result.replacement  filtered text if filtered, original text if not
  *
  */
-CleanSpeak.prototype.convertFilterResponse = function(body) {
+CleanSpeak.prototype._convertFilterResponse = function(body) {
   if (body.matches) {
     return {filtered: true, replacement: body.replacement};
   } else {
@@ -266,8 +266,14 @@ CleanSpeak.prototype.convertFilterResponse = function(body) {
  *
  * @returns {string} result.message             Human-readable rrror message
  */
-CleanSpeak.prototype.convertErrors = function(body) {
-  return body.generalErrors[0].message;
+CleanSpeak.prototype._convertErrors = function(response) {
+  try {
+    var jsonData = JSON.parse(response.body);
+    if (jsonData.generalErrors) return jsonData.generalErrors[0].message;
+    return 'Received code ' + response.statusCode + ' from CleanSpeak server: ' + JSON.stringify(jsonData);
+  } catch(e) {
+    return 'Received code ' + response.statusCode + ' from CleanSpeak server';
+  }
 };
 
 module.exports = CleanSpeak;
