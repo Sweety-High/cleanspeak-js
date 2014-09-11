@@ -203,6 +203,8 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
 
   request.post(uri, {headers: headers, json: body}, function(err, response, body) {
     if (err) return callback(err);
+    if (response.statusCode == 401) return callback("API token missing or incorrect");
+    if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     var applicationId = body.application.id;
     that._createNotificationServer(applicationId, opts.notificationPath, function(err) {
