@@ -235,6 +235,61 @@ describe('CleanSpeak', function() {
     });
   });
 
+  describe('flagContent', function() {
+    var clock;
+
+    beforeEach(function() {
+      cleanSpeak = new CleanSpeak(defaultOptions);
+      var timestamp = new Date().valueOf();
+      clock = sinon.useFakeTimers(timestamp, 'Date');
+    });
+    afterEach(function() {
+      clock.restore();
+    });
+
+    it('completes without error', function(done) {
+      var contentId = uuid();
+      var reporterId = uuid();
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/content/item/flag/' + contentId, {
+          flag: {
+            reporterId: reporterId,
+            createInstant: new Date().valueOf()
+          }
+        })
+        .reply(200, {});
+
+      cleanSpeak.flagContent(contentId, reporterId, function(err) {
+        expect(err).to.be.null;
+
+        done();
+        mockRequest.done();
+      });
+    });
+
+    it('sends optional reason and comment', function(done) {
+      var contentId = uuid();
+      var reporterId = uuid();
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/content/item/flag/' + contentId, {
+          flag: {
+            reporterId: reporterId,
+            createInstant: new Date().valueOf(),
+            reason: 'offensive',
+            comment: 'this thing is a jerk!'
+          }
+        })
+        .reply(200, {});
+
+      cleanSpeak.flagContent(contentId, reporterId, {reason: 'offensive', comment: 'this thing is a jerk!'}, function(err) {
+        expect(err).to.be.null;
+
+        done();
+        mockRequest.done();
+      });
+    });
+  });
+
   describe('addUser', function() {
     var clock, userId;
 

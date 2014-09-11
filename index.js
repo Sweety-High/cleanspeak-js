@@ -48,7 +48,7 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
 
   request.post(uri, {json: body, headers: headers}, function(err, response, responseBody) {
     if (err) return callback(err);
-    if (response.statusCode == 401) return callback("API token missing or incorrect");
+    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null, that._convertFilterResponse(responseBody));
@@ -69,7 +69,7 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
  * @param {string} applicationId        UUID for the application the content is associated with (affects notifications).
  * @param {bool} opts.requiresApproval  Whether or not the content is sent to the queue even if no filter is hit
  * @param {bool} opts.generatesAlert    Whether or not the content is sent to the alert queue
- * @param {function} callback           Optional callback function (err)
+ * @param {function} callback           Callback function (err)
  * @returns {string} err                Error message if an error occurs
  *
  * Example:
@@ -113,9 +113,59 @@ CleanSpeak.prototype.moderate = function(content, contentId, userId, application
   };
   var uri = url.resolve(this.host, '/content/item/moderate/' + contentId);
 
-  request({method: method, uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response, responseBody) {
+  request({method: method, uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response) {
     if (err) return callback(err);
-    if (response.statusCode == 401) return callback("API token missing or incorrect");
+    if (response.statusCode === 401) return callback('API token missing or incorrect');
+    if (response.statusCode !== 200) return callback(that._convertErrors(response));
+
+    return callback(null);
+  });
+};
+
+/*
+ * Sends content for moderation.
+ *
+ * @param {string} contentId            UUID for the content.
+ * @param {string} reporterId           UUID for the user who is reporting the content.
+ * @param {bool} opts.reason            (optional) Reason the item is being reported (i.e. spam, abusive)
+ * @param {bool} opts.comment           (optional) Comment from the reporting user
+ * @param {function} callback           Callback function (err)
+ * @returns {string} err                Error message if an error occurs
+ *
+ * Example:
+ * [
+ *   {
+ *     name: 'username',
+ *     content: 'iamagirl',
+ *     type: 'text'
+ *   }
+ * ]
+ *
+ */
+CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callback) {
+  var that = this;
+  if (typeof opts === 'function') {
+    callback = opts;
+    opts = {};
+  }
+
+  var headers = {
+    Authentication: this.authToken,
+    'Content-Type': 'application/json'
+  };
+  var body = {
+    flag: {
+      reporterId: reporterId,
+      createInstant: new Date().valueOf()
+    }
+  };
+  if (opts.reason) body.flag.reason = opts.reason;
+  if (opts.comment) body.flag.comment = opts.comment;
+  var uri = url.resolve(this.host, '/content/item/flag/' + contentId);
+
+  request({method: 'POST', uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response) {
+    if (err) return callback(err);
+    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null);
@@ -143,7 +193,7 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
     callback = opts;
     opts = {};
   }
-  if (typeof opts.lastLoginInstant === 'Date') opts.lastLoginInstant = opts.lastLoginInstant.valueOf();
+  if (opts.lastLoginInstant instanceof Date) opts.lastLoginInstant = opts.lastLoginInstant.valueOf();
 
   var headers = {
     Authentication: this.authToken
@@ -162,7 +212,7 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
   };
   var uri = url.resolve(this.host, '/content/user/' + userId);
 
-  request.post(uri, {headers: headers, json: body}, function(err, result) {
+  request.post(uri, {headers: headers, json: body}, function(err) {
     if (err) return callback(err);
     return callback(null);
   });
@@ -203,7 +253,7 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
 
   request.post(uri, {headers: headers, json: body}, function(err, response, body) {
     if (err) return callback(err);
-    if (response.statusCode == 401) return callback("API token missing or incorrect");
+    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     var applicationId = body.application.id;
