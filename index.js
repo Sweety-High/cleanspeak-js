@@ -266,6 +266,42 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
 };
 
 /*
+ * Updates an existing application. Currently only supports name change.
+ *
+ * @param {uuid} id                       ID for the application
+ * @param {string} opts.name              Name for the application
+ * @param {callback} function             Callback when complete (err, result)
+ * @returns {string} err                  Error message if error occurs
+ *
+ */
+CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
+  var that = this;
+  if (typeof opts === 'function') {
+    callback = opts;
+    opts = {};
+  }
+
+  var headers = {
+    Authentication: this.authToken
+  };
+  var body = {
+    application: {
+      name: opts.name
+    }
+  };
+
+  var uri = url.resolve(this.host, '/system/application/' + id);
+
+  request.put(uri, {headers: headers, json: body}, function(err, response) {
+    if (err) return callback(err);
+    if (response.statusCode === 401) return callback('API token missing or incorrect');
+    if (response.statusCode !== 200) return callback(that._convertErrors(response));
+
+    return callback(null, {});
+  });
+};
+
+/*
  * Creates a notification server and links it to the application.
  *
  * @param {string} applicationId            Application ID to link to the server

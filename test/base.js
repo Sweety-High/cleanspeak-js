@@ -127,6 +127,7 @@ describe('CleanSpeak', function() {
       });
     });
 
+
     it('overrides the application ID', function(done) {
       var id = uuid();
       var name = chance.string({length: 10});
@@ -150,6 +151,31 @@ describe('CleanSpeak', function() {
 
       cleanSpeak.createApplication(name, {notificationPath: '/contests/' + id + '/moderate', id: id}, function(err, result) {
         expect(result.id).to.equal(id);
+
+        done();
+        mockRequest.done();
+      });
+    });
+  });
+
+  describe('updateApplication', function() {
+    beforeEach(function() {
+      cleanSpeak = new CleanSpeak(defaultOptions);
+    });
+
+    it('sends an update for the application', function(done) {
+      var id = uuid();
+      var name = chance.string({length: 10});
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .put('/system/application/' + id, {
+          application: {
+            name: name
+          }
+        })
+        .reply(200, {});
+
+      cleanSpeak.updateApplication(id, {name: name}, function(err, result) {
+        expect(err).to.not.exist;
 
         done();
         mockRequest.done();
