@@ -1,6 +1,7 @@
 'use strict';
 var request = require('request');
 var url = require('url');
+var _ = require('lodash');
 
 /*
  * Constructor, takes configuration from either passed-in variables or the environment.
@@ -200,18 +201,22 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
   var headers = {
     Authentication: this.authToken
   };
+
+  var userOpts = _.pick({
+    applicationIds: opts.applicationIds,
+    attributes: opts.attributes,
+    displayNames: opts.displayNames,
+    createInstant: new Date().valueOf(),
+    birthDate: opts.birthDate,
+    email: opts.email,
+    lastLoginInstant: opts.lastLoginInstant,
+    name: opts.name,
+    imageURL: opts.imageURL
+  }, function(value) {
+    return !!value;
+  });
   var body = {
-    user: {
-      applicationIds: opts.applicationIds,
-      attributes: opts.attributes,
-      displayNames: opts.displayNames,
-      createInstant: new Date().valueOf(),
-      birthDate: opts.birthDate,
-      email: opts.email,
-      lastLoginInstant: opts.lastLoginInstant,
-      name: opts.name,
-      imageURL: opts.imageURL
-    }
+    user: userOpts
   };
   var uri = url.resolve(this.host, '/content/user/' + userId);
   var method = opts.update ? 'PUT' : 'POST';

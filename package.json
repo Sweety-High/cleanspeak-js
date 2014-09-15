@@ -1,6 +1,6 @@
 {
   "name": "cleanspeak",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "David Edmondson",
     "email": "threehams@gmail.com"
@@ -13,6 +13,7 @@
   },
   "keywords": [],
   "dependencies": {
+    "lodash": "^2.4.1",
     "pg": "^3.4.1"
   },
   "devDependencies": {
