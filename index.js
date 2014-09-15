@@ -64,9 +64,9 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
  *                                        (for type 'image').
  * @param {string} content[x].type      The type of the content part.
  *                                        Valid types: text, attribute, hyperlink, image, video, audio
- * @param {string} contentId            UUID for the content.
- * @param {string} userId               UUID for the user who owns the content.
- * @param {string} applicationId        UUID for the application the content is associated with (affects notifications).
+ * @param {string} opts.contentId       UUID for the content.
+ * @param {string} opts.userId          UUID for the user who owns the content.
+ * @param {string} opts.applicationId   UUID for the application the content is associated with (affects notifications).
  * @param {bool} opts.requiresApproval  Whether or not the content is sent to the queue even if no filter is hit
  * @param {bool} opts.generatesAlert    Whether or not the content is sent to the alert queue
  * @param {function} callback           Callback function (err)
@@ -82,7 +82,7 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
  * ]
  *
  */
-CleanSpeak.prototype.moderate = function(content, contentId, userId, applicationId, opts, callback) {
+CleanSpeak.prototype.moderate = function(content, opts, callback) {
   var that = this;
   if (typeof opts === 'function') {
     callback = opts;
@@ -104,14 +104,14 @@ CleanSpeak.prototype.moderate = function(content, contentId, userId, application
   };
   var body = {
     content: {
-      applicationId: applicationId,
+      applicationId: opts.applicationId,
       createInstant: new Date().valueOf(),
       parts: content,
-      senderId: userId
+      senderId: opts.userId
     },
     moderation: queueOption
   };
-  var uri = url.resolve(this.host, '/content/item/moderate/' + contentId);
+  var uri = url.resolve(this.host, '/content/item/moderate/' + opts.contentId);
 
   request({method: method, uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response) {
     if (err) return callback(err);
