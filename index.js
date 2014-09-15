@@ -185,6 +185,7 @@ CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callbac
  * @param {number} opts.lastLoginInstant  Timestamp of user's last login time, in either Unix timestamp or Date format
  *                                          (optional).
  * @param {number} opts.name              User's name (optional).
+ * @param {boolean} opts.update           true if updating an existing record, false if not
  * @returns {string} err                  Error message if an error occurs
  *
  */
@@ -211,8 +212,9 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
     }
   };
   var uri = url.resolve(this.host, '/content/user/' + userId);
+  var method = opts.update ? 'PUT' : 'POST';
 
-  request.post(uri, {headers: headers, json: body}, function(err) {
+  request({method: method, uri: uri, headers: headers, json: body}, function(err) {
     if (err) return callback(err);
     return callback(null);
   });

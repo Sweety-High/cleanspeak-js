@@ -330,6 +330,9 @@ describe('CleanSpeak', function() {
 
     beforeEach(function() {
       userId = uuid();
+    });
+
+    it('runs without error', function(done) {
       mockRequest = nock('http://cleanspeak.example.com:8001')
         .post('/content/user/' + userId, {
           user: {
@@ -337,10 +340,24 @@ describe('CleanSpeak', function() {
           }
         })
         .reply(200, {});
+      cleanSpeak.addUser(userId, function(err) {
+        expect(err).to.not.exist;
+
+        done();
+        mockRequest.done();
+      });
     });
 
-    it('runs without error', function(done) {
-      cleanSpeak.addUser(userId, function(err) {
+    it('updates an existing user', function(done) {
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .put('/content/user/' + userId, {
+          user: {
+            createInstant: new Date().valueOf(),
+            displayNames: ['name1', 'name2']
+          }
+        })
+        .reply(200, {});
+      cleanSpeak.addUser(userId, {update: true, displayNames: ['name1', 'name2']}, function(err) {
         expect(err).to.not.exist;
 
         done();
