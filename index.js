@@ -185,6 +185,7 @@ CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callbac
  * @param {number} opts.lastLoginInstant  Timestamp of user's last login time, in either Unix timestamp or Date format
  *                                          (optional).
  * @param {number} opts.name              User's name (optional).
+ * @param {string} opts.imageURL          URL for user's profile image.
  * @param {boolean} opts.update           true if updating an existing record, false if not
  * @returns {string} err                  Error message if an error occurs
  *
@@ -208,7 +209,8 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
       birthDate: opts.birthDate,
       email: opts.email,
       lastLoginInstant: opts.lastLoginInstant,
-      name: opts.name
+      name: opts.name,
+      imageURL: opts.imageURL
     }
   };
   var uri = url.resolve(this.host, '/content/user/' + userId);
