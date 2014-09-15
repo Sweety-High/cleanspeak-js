@@ -314,6 +314,7 @@ CleanSpeak.prototype._createNotificationServer = function(applicationId, path, c
 
   this.pg.connect(this.databaseUrl, function(err, client) {
     var uri = url.resolve(that.notificationHost, path);
+    if (!uri) return callback('Error while build URI. noticationHost: ', that.notificationHost, ', path: ', path);
     if (err) return callback('error fetching client from pool', err);
 
     var query = 'INSERT INTO notification_servers (url, http_authentication_username, http_authentication_password) VALUES ($1, $2, $3) RETURNING id';
