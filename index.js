@@ -321,7 +321,7 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
 CleanSpeak.prototype._createNotificationServer = function(applicationId, path, callback) {
   var that = this;
 
-  this.pg.connect(this.databaseUrl, function(err, client) {
+  this.pg.connect(this.databaseUrl, function(err, client, done) {
     var uri = url.resolve(that.notificationHost, path);
     if (!uri) return callback('Error while build URI. noticationHost: ', that.notificationHost, ', path: ', path);
     if (err) return callback('error fetching client from pool', err);
@@ -329,13 +329,17 @@ CleanSpeak.prototype._createNotificationServer = function(applicationId, path, c
     var query = 'INSERT INTO notification_servers (url, http_authentication_username, http_authentication_password) VALUES ($1, $2, $3) RETURNING id';
     var params = [uri, that.notificationUsername, that.notificationPassword];
     client.query(query, params, function(err, result) {
-      if (err) return callback(err);
+      if (err) {
+        done();
+        return callback(err);
+      }
 
       var notificationId = result.rows[0].id;
 
       var query = 'INSERT INTO notification_servers_applications (notification_servers_id, applications_id) VALUES ($1, $2)';
       var params = [notificationId, applicationId];
       client.query(query, params, function(err) {
+        done();
         if (err) return callback(err);
 
         return callback(null);
