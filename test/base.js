@@ -88,9 +88,10 @@ describe('CleanSpeak', function() {
           });
         }
       };
+      var done = function() {};
       var fakePg = {
         connect: function(url, callback) {
-          return callback(null, fakeClient);
+          return callback(null, fakeClient, done);
         }
       };
       var options = defaultOptions;
