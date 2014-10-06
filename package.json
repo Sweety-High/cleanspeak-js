@@ -1,6 +1,6 @@
 {
   "name": "cleanspeak",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "author": {
     "name": "David Edmondson",
     "email": "threehams@gmail.com"
@@ -19,6 +19,7 @@
   "devDependencies": {
     "chai": "^1.9.1",
     "chance": "^0.5.9",
+    "istanbul": "^0.3.2",
     "mocha": "^1.21.4",
     "nock": "^0.45.0",
     "sinon": "^1.10.3",
@@ -31,7 +32,9 @@
   },
   "scripts": {
     "test": "mocha",
-    "watch": "mocha --reporter dot --watch"
+    "watch": "mocha --reporter dot --watch",
+    "coverage": "istanbul cover _mocha",
+    "coverage-html": "istanbul cover _mocha && open coverage/lcov-report/index.html"
   },
   "bugs": {
     "url": "https://github.com/Sweety-High/cleanspeak-js/issues"

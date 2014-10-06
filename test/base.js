@@ -11,7 +11,7 @@ var uuid = require('uuid');
 var CleanSpeak = require('../index');
 var chance = require('chance').Chance();
 var nock = require('nock');
-
+nock.disableNetConnect();
 
 describe('CleanSpeak', function() {
   var cleanSpeak, mockRequest, content, defaultOptions;
@@ -77,6 +77,18 @@ describe('CleanSpeak', function() {
         });
       });
     });
+
+    describe('when enabled is false', function() {
+      it('returns filtered: false with the original text', function(done) {
+        cleanSpeak.enabled = false;
+        cleanSpeak.filter('dirty', function(err, result) {
+          expect(result.filtered).to.be.false;
+          expect(result.replacement).to.equal('dirty');
+
+          done();
+        });
+      });
+    });
   });
 
   describe('createApplication', function() {
@@ -128,7 +140,6 @@ describe('CleanSpeak', function() {
       });
     });
 
-
     it('overrides the application ID', function(done) {
       var id = uuid();
       var name = chance.string({length: 10});
@@ -157,6 +168,18 @@ describe('CleanSpeak', function() {
         mockRequest.done();
       });
     });
+
+    describe('when enabled is false', function() {
+      it('does nothing', function(done) {
+        cleanSpeak.enabled = false;
+        cleanSpeak.createApplication('app', function(err, result) {
+          expect(err).to.not.exist;
+          expect(result).to.not.exist;
+
+          done();
+        });
+      });
+    });
   });
 
   describe('updateApplication', function() {
@@ -180,6 +203,18 @@ describe('CleanSpeak', function() {
 
         done();
         mockRequest.done();
+      });
+    });
+
+    describe('when enabled is false', function() {
+      it('does nothing', function(done) {
+        cleanSpeak.enabled = false;
+        cleanSpeak.updateApplication(uuid(), function(err, result) {
+          expect(err).to.not.exist;
+          expect(result).to.not.exist;
+
+          done();
+        });
       });
     });
   });
@@ -260,6 +295,18 @@ describe('CleanSpeak', function() {
         mockRequest.done();
       });
     });
+
+    describe('when enabled is false', function() {
+      it('does nothing', function(done) {
+        cleanSpeak.enabled = false;
+        cleanSpeak.moderate([], function(err, result) {
+          expect(err).to.not.exist;
+          expect(result).to.not.exist;
+
+          done();
+        });
+      });
+    });
   });
 
   describe('flagContent', function() {
@@ -315,6 +362,18 @@ describe('CleanSpeak', function() {
         mockRequest.done();
       });
     });
+
+    describe('when enabled is false', function() {
+      it('does nothing', function(done) {
+        cleanSpeak.enabled = false;
+        cleanSpeak.flagContent(uuid(), uuid(), function(err, result) {
+          expect(err).to.not.exist;
+          expect(result).to.not.exist;
+
+          done();
+        });
+      });
+    });
   });
 
   describe('addUser', function() {
@@ -363,6 +422,18 @@ describe('CleanSpeak', function() {
 
         done();
         mockRequest.done();
+      });
+    });
+
+    describe('when enabled is false', function() {
+      it('does nothing', function(done) {
+        cleanSpeak.enabled = false;
+        cleanSpeak.addUser(uuid(), function(err, result) {
+          expect(err).to.not.exist;
+          expect(result).to.not.exist;
+
+          done();
+        });
       });
     });
   });

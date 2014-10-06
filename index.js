@@ -11,6 +11,8 @@ var _ = require('lodash');
  * @param {string} opts.notificationHost        Hostname for the notification server. Used for accepting/rejecting moderation.
  * @param {string} opts.notificationUsername    Username for the notification server.
  * @param {string} opts.notificationPassword    Password for the notification server.
+ * @param {string} opts.pg                      Postgres module (exposed for testing)
+ * @param {string} opts.enabled                 Set to false to bypass all CleanSpeak methods (development mode)
  */
 function CleanSpeak(opts) {
   this.host = opts.host;
@@ -20,6 +22,7 @@ function CleanSpeak(opts) {
   this.notificationUsername = opts.notificationUsername;
   this.notificationPassword = opts.notificationPassword;
   this.pg = opts.pg || require('pg'); // injected for testing
+  this.enabled = opts.enabled || true;
 }
 
 /*
@@ -38,6 +41,7 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
     callback = opts;
     opts = {};
   }
+  if (!this.enabled) return callback(null, {filtered: false, replacement: content});
 
   var headers = {
     Authentication: this.authToken,
@@ -90,6 +94,7 @@ CleanSpeak.prototype.moderate = function(content, opts, callback) {
     callback = opts;
     opts = {};
   }
+  if (!this.enabled) return callback(null);
 
   var method = opts.update ? 'PUT' : 'POST';
 
@@ -150,6 +155,7 @@ CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callbac
     callback = opts;
     opts = {};
   }
+  if (!this.enabled) return callback(null);
 
   var headers = {
     Authentication: this.authToken,
@@ -197,6 +203,8 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
     callback = opts;
     opts = {};
   }
+  if (!this.enabled) return callback(null);
+
   if (opts.lastLoginInstant instanceof Date) opts.lastLoginInstant = opts.lastLoginInstant.valueOf();
 
   var headers = {
@@ -245,6 +253,7 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
     callback = opts;
     opts = {};
   }
+  if (!this.enabled) return callback(null);
 
   var headers = {
     Authentication: this.authToken,
@@ -292,6 +301,7 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
     callback = opts;
     opts = {};
   }
+  if (!this.enabled) return callback(null);
 
   var headers = {
     Authentication: this.authToken,
@@ -310,7 +320,7 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
     if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
-    return callback(null, {});
+    return callback(null);
   });
 };
 
