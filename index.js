@@ -22,7 +22,7 @@ function CleanSpeak(opts) {
   this.notificationUsername = opts.notificationUsername;
   this.notificationPassword = opts.notificationPassword;
   this.pg = opts.pg || require('pg'); // injected for testing
-  this.enabled = opts.enabled || true;
+  this.enabled = typeof opts.enabled !== 'undefined' ? opts.enabled : true;
 }
 
 /*
