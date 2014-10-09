@@ -12,6 +12,7 @@ var CleanSpeak = require('../index');
 var chance = require('chance').Chance();
 var nock = require('nock');
 nock.disableNetConnect();
+var _ = require('lodash');
 
 describe('CleanSpeak', function() {
   var cleanSpeak, mockRequest, content, defaultOptions;
@@ -25,6 +26,38 @@ describe('CleanSpeak', function() {
       notificationUsername: 'user',
       notificationPassword: 'pass'
     };
+  });
+
+  describe('constructor', function() {
+    describe('enabled', function() {
+      it('sets to true by default', function() {
+        cleanSpeak = new CleanSpeak(defaultOptions);
+        expect(cleanSpeak.enabled).to.be.true;
+      });
+
+      it('sets to false if specified', function() {
+        defaultOptions.enabled = false;
+        cleanSpeak = new CleanSpeak(defaultOptions);
+        expect(cleanSpeak.enabled).to.be.false;
+      });
+    });
+
+    describe('queue options', function() {
+      it('sets default attempts and priority', function() {
+        defaultOptions.queue = {};
+        cleanSpeak = new CleanSpeak(defaultOptions);
+        expect(cleanSpeak.queueOpts.attempts).to.equal(5);
+        expect(cleanSpeak.queueOpts.priority).to.equal('normal');
+      });
+
+      it('allows attempt and priority overrides', function() {
+        defaultOptions.queue = {};
+        defaultOptions.queueOpts = { attempts: 10, priority: 'high' };
+        cleanSpeak = new CleanSpeak(defaultOptions);
+        expect(cleanSpeak.queueOpts.attempts).to.equal(10);
+        expect(cleanSpeak.queueOpts.priority).to.equal('high');
+      });
+    });
   });
 
   describe('filter', function() {
@@ -307,6 +340,34 @@ describe('CleanSpeak', function() {
         });
       });
     });
+
+    describe('when a queue is available', function() {
+      var queueSpy;
+
+      beforeEach(function() {
+        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { queue: {} }));
+        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(queue, data, callback) {
+          callback(null);
+        });
+      });
+
+      it('adds the request to the queue', function(done) {
+        var contentId = uuid();
+        content = [
+          {
+            name: 'username',
+            content: 'iamagirl',
+            type: 'text'
+          }
+        ];
+        cleanSpeak.moderate(content, {contentId: contentId}, function(err, result) {
+          expect(queueSpy.args[0][0]).to.equal('moderate');
+          expect(queueSpy.args[0][1]).to.eql({ content: content, opts: {contentId: contentId}});
+
+          done();
+        });
+      });
+    });
   });
 
   describe('flagContent', function() {
@@ -374,6 +435,28 @@ describe('CleanSpeak', function() {
         });
       });
     });
+
+    describe('when a queue is available', function() {
+      var queueSpy;
+
+      beforeEach(function() {
+        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { queue: {} }));
+        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(queue, data, callback) {
+          callback(null);
+        });
+      });
+
+      it('adds the request to the queue', function(done) {
+        var contentId = uuid();
+        var reporterId = uuid();
+        cleanSpeak.flagContent(contentId, reporterId, function(err, result) {
+          expect(queueSpy.args[0][0]).to.equal('flagContent');
+          expect(queueSpy.args[0][1]).to.eql({ contentId: contentId, reporterId: reporterId, opts: {}});
+
+          done();
+        });
+      });
+    });
   });
 
   describe('addUser', function() {
@@ -408,6 +491,40 @@ describe('CleanSpeak', function() {
       });
     });
 
+    it('coverts lastLoginInstant if given a date object', function(done) {
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/content/user/' + userId, {
+          user: {
+            createInstant: new Date().valueOf(),
+            lastLoginInstant: new Date().valueOf()
+          }
+        })
+        .reply(200, {});
+      cleanSpeak.addUser(userId, { lastLoginInstant: new Date() }, function(err) {
+        expect(err).to.not.exist;
+
+        done();
+        mockRequest.done();
+      });
+    });
+
+    it('does not covert lastLoginInstant if given an integer', function(done) {
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/content/user/' + userId, {
+          user: {
+            createInstant: new Date().valueOf(),
+            lastLoginInstant: new Date().valueOf()
+          }
+        })
+        .reply(200, {});
+      cleanSpeak.addUser(userId, { lastLoginInstant: new Date().valueOf() }, function(err) {
+        expect(err).to.not.exist;
+
+        done();
+        mockRequest.done();
+      });
+    });
+
     it('updates an existing user', function(done) {
       mockRequest = nock('http://cleanspeak.example.com:8001')
         .put('/content/user/' + userId, {
@@ -434,6 +551,45 @@ describe('CleanSpeak', function() {
 
           done();
         });
+      });
+    });
+  });
+
+  describe('optional queue', function() {
+    var createSpy, attemptsSpy, prioritySpy, saveSpy, userId;
+
+    beforeEach(function() {
+      userId = uuid();
+      var fakeQueue = { create: function() {} };
+      var fakeSave = { save: function() {} };
+      var fakeAttempts = { attempts: function() {} };
+      var fakePriority = { priority: function() {} };
+      createSpy = sinon.stub(fakeQueue, 'create').returns(fakeAttempts);
+      attemptsSpy = sinon.stub(fakeAttempts, 'attempts').returns(fakePriority);
+      prioritySpy = sinon.stub(fakePriority, 'priority').returns(fakeSave);
+      saveSpy = sinon.stub(fakeSave, 'save', function(callback) {
+        return callback(null);
+      });
+      var options = _.merge(defaultOptions, {
+        queue: fakeQueue,
+        queueOpts: {
+          attempts: 10,
+          priority: 'high'
+        }
+      });
+      cleanSpeak = new CleanSpeak(options);
+    });
+
+    it('writes to the queue', function(done) {
+      cleanSpeak.addUser(userId, function(err) {
+        expect(err).to.not.exist;
+
+        expect(createSpy).to.have.been.calledWith('addUser', {userId: userId, opts: {}});
+        expect(attemptsSpy).to.have.been.calledWith(10);
+        expect(prioritySpy).to.have.been.calledWith('high');
+        expect(saveSpy).to.have.been.called;
+
+        done();
       });
     });
   });

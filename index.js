@@ -11,18 +11,30 @@ var _ = require('lodash');
  * @param {string} opts.notificationHost        Hostname for the notification server. Used for accepting/rejecting moderation.
  * @param {string} opts.notificationUsername    Username for the notification server.
  * @param {string} opts.notificationPassword    Password for the notification server.
- * @param {string} opts.pg                      Postgres module (exposed for testing)
- * @param {string} opts.enabled                 Set to false to bypass all CleanSpeak methods (development mode)
+ * @param {string} opts.pg                      Postgres module (exposed for testing).
+ * @param {string} opts.enabled                 Set to false to bypass all CleanSpeak methods (development mode).
+ * @param {object} opts.queue                   Optional queue for delayed processing.
+ * @param {object} opts.queueOpts.attempts      Retry attempts if queue insert fails.
+ * @param {object} opts.queueOpts.priority      Queue priority (low, normal, medium, high, critical)
  */
 function CleanSpeak(opts) {
   this.host = opts.host;
   this.authToken = opts.authToken;
   this.databaseUrl = opts.databaseUrl;
+  // TODO these three options are only used for createApplication, maybe move them there?
   this.notificationHost = opts.notificationHost;
   this.notificationUsername = opts.notificationUsername;
   this.notificationPassword = opts.notificationPassword;
-  this.pg = opts.pg || require('pg'); // injected for testing
+  this.pg = opts.pg || require('pg'); // inject for testing
   this.enabled = typeof opts.enabled !== 'undefined' ? opts.enabled : true;
+  if (opts.queue) {
+    this.queue = opts.queue;
+    opts.queueOpts = opts.queueOpts || {};
+    this.queueOpts = _.merge({
+      attempts: 5,
+      priority: 'normal'
+    }, opts.queueOpts);
+  }
 }
 
 /*
@@ -95,6 +107,7 @@ CleanSpeak.prototype.moderate = function(content, opts, callback) {
     opts = {};
   }
   if (!this.enabled) return callback(null);
+  if (this.queue) return this._addQueue('moderate',  {content: content, opts: opts}, callback);
 
   var method = opts.update ? 'PUT' : 'POST';
 
@@ -156,6 +169,7 @@ CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callbac
     opts = {};
   }
   if (!this.enabled) return callback(null);
+  if (this.queue) return this._addQueue('flagContent',  {contentId: contentId, reporterId: reporterId, opts: opts}, callback);
 
   var headers = {
     Authentication: this.authToken,
@@ -204,6 +218,7 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
     opts = {};
   }
   if (!this.enabled) return callback(null);
+  if (this.queue) return this._addQueue('addUser', {userId: userId, opts: opts}, callback);
 
   if (opts.lastLoginInstant instanceof Date) opts.lastLoginInstant = opts.lastLoginInstant.valueOf();
 
@@ -391,6 +406,14 @@ CleanSpeak.prototype._convertErrors = function(response) {
   } catch(e) {
     return 'Received code ' + response.statusCode + ' from CleanSpeak server';
   }
+};
+
+CleanSpeak.prototype._addQueue = function(queue, data, callback) {
+  this.queue.create('addUser', data).attempts(this.queueOpts.attempts).priority(this.queueOpts.priority).save(function(err) {
+    if (err) return callback(err);
+
+    callback(null);
+  });
 };
 
 module.exports = CleanSpeak;
