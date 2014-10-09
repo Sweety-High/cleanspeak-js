@@ -409,7 +409,7 @@ CleanSpeak.prototype._convertErrors = function(response) {
 };
 
 CleanSpeak.prototype._addQueue = function(queue, data, callback) {
-  this.queue.create('addUser', data).attempts(this.queueOpts.attempts).priority(this.queueOpts.priority).save(function(err) {
+  this.queue.create(queue, data).attempts(this.queueOpts.attempts).priority(this.queueOpts.priority).save(function(err) {
     if (err) return callback(err);
 
     callback(null);
