@@ -255,11 +255,21 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
 /*
  * Creates a new application (with a new moderation queue) and attaches a notification server.
  *
- * @param {string} name                   Name for the application, as shown in Cleanspeak
- * @param {string} opts.notificationPath  Path that the notification server will contact on moderation accept/reject
- * @param {uuid} opts.id                  Optional id to use for the application instead of randomizing
- * @param {callback} function             Callback when complete (err, result)
- * @returns {string} err                  Error message if error occurs
+ * @param {string} name                                 Name for the application, as shown in Cleanspeak
+ * @param {string} opts.notificationPath                Path that the notification server will contact on moderation accept/reject
+ * @param {bool} opts.storeContent                      true if all content should be stored in CleanSpeak's database.
+ * @param {bool} opts.persistent                        true if content should be persistent (eligible for moderation).
+ *                                                        Defaults to false (transient).
+ * @param {bool} opts.preModeration                     true to queue all items regardless of filtering (pre-moderation).
+ *                                                        If false, this can still be set on every moderation call.
+ * @param {bool} opts.contentEditable                   true if the content in the application can be edited by moderators.
+ * @param {bool} opts.contentDeletable                  true if the content in the application can be delete by moderators.
+ * @param {bool} opts.defaultActionisQueueForApproval   true if all content should be queued (pre-moderation).
+ * @param {bool} opts.contentUserActionsEnabled         true if users in this application can be actioned by moderators.
+ *
+ * @param {uuid} opts.id                                Optional id to use for the application instead of selecting a random one.
+ * @param {callback} function                           Callback when complete (err, result)
+ * @returns {string} err                                Error message if error occurs
  *
  */
 CleanSpeak.prototype.createApplication = function(name, opts, callback) {
@@ -274,13 +284,19 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
     Authentication: this.authToken,
     'Content-Type': 'application/json'
   };
+
+  var moderationOpts = _.pick(opts, [
+    'contentDeletable',
+    'contentEditable',
+    'contentUserActionsEnabled',
+    'defaultActionisQueueForApproval',
+    'persistent',
+    'storeContent'
+  ]);
   var body = {
     application: {
       name: name,
-      moderationConfiguration: {
-        storeContent: true,
-        persistent: true
-      }
+      moderationConfiguration: moderationOpts
     }
   };
 

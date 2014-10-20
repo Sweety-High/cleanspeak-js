@@ -144,7 +144,7 @@ describe('CleanSpeak', function() {
       cleanSpeak = new CleanSpeak(options);
     });
 
-    it('returns the application ID', function(done) {
+    it('does not send the application ID', function(done) {
       var id = uuid();
       var name = chance.string({length: 10});
       mockRequest = nock('http://cleanspeak.example.com:8001')
@@ -160,12 +160,87 @@ describe('CleanSpeak', function() {
             emailOnAlerts: false,
             emailOnContentFlagged: false,
             emailOnUserFlagged: false,
-            persistent: true,
-            storeContent: true },
+            persistent: false,
+            storeContent: false },
           name: name }
         });
 
       cleanSpeak.createApplication(name, {notificationPath: '/contests/' + id + '/moderate'}, function(err, result) {
+        expect(result.id).to.equal(id);
+
+        done();
+        mockRequest.done();
+      });
+    });
+
+    it('sends truthy options', function(done) {
+      var modOpts = {
+        contentDeletable: true,
+        contentEditable: true,
+        contentUserActionsEnabled: true,
+        defaultActionisQueueForApproval: true,
+        persistent: true,
+        storeContent: true
+      };
+      var id = uuid();
+      var name = chance.string({length: 10});
+      var expectedOpts = JSON.stringify({
+        application: {
+          name: name,
+          moderationConfiguration: modOpts
+        }
+      });
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/system/application', expectedOpts)
+        .reply(200, {application: {id: id}});
+
+      cleanSpeak.createApplication(name, _.merge(modOpts, {notificationPath: '/contests/' + id + '/moderate'}), function() {
+        done();
+        mockRequest.done();
+      });
+    });
+
+    it('sends falsy options', function(done) {
+      var modOpts = {
+        contentDeletable: false,
+        contentEditable: false,
+        contentUserActionsEnabled: false,
+        defaultActionisQueueForApproval: false,
+        persistent: false,
+        storeContent: false
+      };
+      var id = uuid();
+      var name = chance.string({length: 10});
+      var expectedOpts = JSON.stringify({
+        application: {
+          name: name,
+          moderationConfiguration: modOpts
+        }
+      });
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/system/application', expectedOpts)
+        .reply(200, {application: {id: id}});
+
+      cleanSpeak.createApplication(name, _.merge(modOpts, {notificationPath: '/contests/' + id + '/moderate'}), function() {
+        done();
+        mockRequest.done();
+      });
+    });
+
+    it('filters out unknown options', function(done) {
+      var id = uuid();
+      var name = chance.string({length: 10});
+      mockRequest = nock('http://cleanspeak.example.com:8001')
+        .post('/system/application', JSON.stringify({
+          application: {
+            name: name,
+            moderationConfiguration: {}
+          }
+        }))
+        .reply(200, {application: {id: id}});
+
+      cleanSpeak.createApplication(name, {notificationPath: '/contests/' + id + '/moderate', pork: 'pork'}, function(err, result) {
+        expect(err).to.not.exist;
         expect(result.id).to.equal(id);
 
         done();
@@ -189,8 +264,8 @@ describe('CleanSpeak', function() {
             emailOnAlerts: false,
             emailOnContentFlagged: false,
             emailOnUserFlagged: false,
-            persistent: true,
-            storeContent: true },
+            persistent: false,
+            storeContent: false },
           name: name }
         });
 
