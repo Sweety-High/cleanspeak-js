@@ -260,11 +260,10 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
  * @param {bool} opts.storeContent                      true if all content should be stored in CleanSpeak's database.
  * @param {bool} opts.persistent                        true if content should be persistent (eligible for moderation).
  *                                                        Defaults to false (transient).
- * @param {bool} opts.preModeration                     true to queue all items regardless of filtering (pre-moderation).
- *                                                        If false, this can still be set on every moderation call.
  * @param {bool} opts.contentEditable                   true if the content in the application can be edited by moderators.
  * @param {bool} opts.contentDeletable                  true if the content in the application can be delete by moderators.
  * @param {bool} opts.defaultActionisQueueForApproval   true if all content should be queued (pre-moderation).
+ *                                                        If false, this can still be set on individual moderation calls.
  * @param {bool} opts.contentUserActionsEnabled         true if users in this application can be actioned by moderators.
  *
  * @param {uuid} opts.id                                Optional id to use for the application instead of selecting a random one.
@@ -289,7 +288,7 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
     'contentDeletable',
     'contentEditable',
     'contentUserActionsEnabled',
-    'defaultActionisQueueForApproval',
+    'defaultActionIsQueueForApproval',
     'persistent',
     'storeContent'
   ]);
