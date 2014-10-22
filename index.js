@@ -66,7 +66,6 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
 
   request.post(uri, {body: JSON.stringify(body), headers: headers}, function(err, response, responseBody) {
     if (err) return callback(err);
-    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null, that._convertFilterResponse(responseBody));
@@ -135,7 +134,6 @@ CleanSpeak.prototype.moderate = function(content, opts, callback) {
 
   request({method: method, uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response) {
     if (err) return callback(err);
-    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null);
@@ -187,7 +185,6 @@ CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callbac
 
   request({method: 'POST', uri: uri, headers: headers, body: JSON.stringify(body)}, function(err, response) {
     if (err) return callback(err);
-    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null);
@@ -304,7 +301,6 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
 
   request.post(uri, {headers: headers, body: JSON.stringify(body)}, function(err, response, body) {
     if (err) return callback(err);
-    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     var applicationId = JSON.parse(body).application.id;
@@ -334,9 +330,8 @@ CleanSpeak.prototype.deleteApplication = function(id, opts, callback) {
   };
 
   var uri = url.resolve(this.host, '/system/application/' + id);
-  request.del(uri, {headers: headers}, function(err, response, body) {
+  request.del(uri, {headers: headers}, function(err, response) {
     if (err) return callback(err);
-    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     that._deleteNotificationServer(id, opts.notificationPath, function(err) {
@@ -378,7 +373,6 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
 
   request.put(uri, {headers: headers, body: JSON.stringify(body)}, function(err, response) {
     if (err) return callback(err);
-    if (response.statusCode === 401) return callback('API token missing or incorrect');
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null);
@@ -468,15 +462,21 @@ CleanSpeak.prototype._convertFilterResponse = function(body) {
 /*
  * Parses the response from Cleanspeak and pulls the error message
  *
- * @returns {string} result.message             Human-readable rrror message
+ * @returns {obj} error.statusCode         Human-readable error message
  */
 CleanSpeak.prototype._convertErrors = function(response) {
   try {
     var jsonData = JSON.parse(response.body);
-    if (jsonData.generalErrors) return jsonData.generalErrors[0].message;
-    return 'Received code ' + response.statusCode + ' from CleanSpeak server: ' + JSON.stringify(jsonData);
+    return {
+      statusCode: response.statusCode,
+      message: jsonData
+    };
   } catch(e) {
-    return 'Received code ' + response.statusCode + ' from CleanSpeak server';
+    return {
+      statusCode: response.statusCode,
+      message: response.body
+    };
+
   }
 };
 

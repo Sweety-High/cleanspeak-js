@@ -331,7 +331,7 @@ describe('CleanSpeak', function() {
         })
         .reply(200, {});
 
-      cleanSpeak.updateApplication(id, {name: name}, function(err, result) {
+      cleanSpeak.updateApplication(id, {name: name}, function(err) {
         expect(err).to.not.exist;
 
         done();
@@ -460,7 +460,7 @@ describe('CleanSpeak', function() {
             type: 'text'
           }
         ];
-        cleanSpeak.moderate(content, {contentId: contentId}, function(err, result) {
+        cleanSpeak.moderate(content, {contentId: contentId}, function() {
           expect(queueSpy.args[0][0]).to.equal('moderate');
           expect(queueSpy.args[0][1]).to.eql({ content: content, opts: {contentId: contentId}});
 
@@ -549,7 +549,7 @@ describe('CleanSpeak', function() {
       it('adds the request to the queue', function(done) {
         var contentId = uuid();
         var reporterId = uuid();
-        cleanSpeak.flagContent(contentId, reporterId, function(err, result) {
+        cleanSpeak.flagContent(contentId, reporterId, function() {
           expect(queueSpy.args[0][0]).to.equal('flagContent');
           expect(queueSpy.args[0][1]).to.eql({ contentId: contentId, reporterId: reporterId, opts: {}});
 
@@ -690,6 +690,54 @@ describe('CleanSpeak', function() {
         expect(saveSpy).to.have.been.called;
 
         done();
+      });
+    });
+  });
+
+  describe('errors', function() {
+    beforeEach(function() {
+      cleanSpeak = new CleanSpeak(defaultOptions);
+    });
+
+    describe('when the server returns an error in JSON format', function() {
+      it('returns the error in a standard format', function() {
+        mockRequest = nock('http://cleanspeak.example.com:8001')
+          .post('/content/item/filter')
+          .reply(400, JSON.stringify({
+            generalErrors: [
+              {
+                code: '[invalid]',
+                message: 'Your JSON was invalid'
+              }
+            ]
+          }));
+        cleanSpeak.filter('error', function(err) {
+          expect(err).to.eql({
+            statusCode: 400,
+            message: {
+              generalErrors: [
+                {
+                  code: '[invalid]',
+                  message: 'Your JSON was invalid'
+                }
+              ]
+            }
+          });
+        });
+      });
+    });
+
+    describe('when the server returns a non-JSON error', function() {
+      it('returns the error in a standard format', function() {
+        mockRequest = nock('http://cleanspeak.example.com:8001')
+          .post('/content/item/filter')
+          .reply(400, 'There was a problem, contact Inversoft');
+        cleanSpeak.filter('error', function(err) {
+          expect(err).to.eql({
+            statusCode: 400,
+            message: 'There was a problem, contact Inversoft'
+          });
+        });
       });
     });
   });
