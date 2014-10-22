@@ -20,8 +20,8 @@ var _ = require('lodash');
 function CleanSpeak(opts) {
   this.host = opts.host;
   this.authToken = opts.authToken;
+  // TODO these four options are only used for createApplication, maybe move them there?
   this.databaseUrl = opts.databaseUrl;
-  // TODO these three options are only used for createApplication, maybe move them there?
   this.notificationHost = opts.notificationHost;
   this.notificationUsername = opts.notificationUsername;
   this.notificationPassword = opts.notificationPassword;
@@ -262,7 +262,7 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
  *                                                        Defaults to false (transient).
  * @param {bool} opts.contentEditable                   true if the content in the application can be edited by moderators.
  * @param {bool} opts.contentDeletable                  true if the content in the application can be delete by moderators.
- * @param {bool} opts.defaultActionisQueueForApproval   true if all content should be queued (pre-moderation).
+ * @param {bool} opts.defaultActionIsQueueForApproval   true if all content should be queued (pre-moderation).
  *                                                        If false, this can still be set on individual moderation calls.
  * @param {bool} opts.contentUserActionsEnabled         true if users in this application can be actioned by moderators.
  *
@@ -317,6 +317,37 @@ CleanSpeak.prototype.createApplication = function(name, opts, callback) {
 };
 
 /*
+ * Deletes an application, along with its notification server.
+ *
+ * @param {uuid} id                 ID for the application, as shown in Cleanspeak
+ * @param {callback} function       Callback when complete (err, result)
+ * @returns {string} err            Error message if error occurs
+ *
+ */
+CleanSpeak.prototype.deleteApplication = function(id, opts, callback) {
+  var that = this;
+  if (!this.enabled) return callback(null);
+  if (!opts.notificationPath) return callback('notificationPath is required');
+
+  var headers = {
+    Authentication: this.authToken
+  };
+
+  var uri = url.resolve(this.host, '/system/application/' + id);
+  request.del(uri, {headers: headers}, function(err, response, body) {
+    if (err) return callback(err);
+    if (response.statusCode === 401) return callback('API token missing or incorrect');
+    if (response.statusCode !== 200) return callback(that._convertErrors(response));
+
+    that._deleteNotificationServer(id, opts.notificationPath, function(err) {
+      if (err) return callback(err);
+
+      return callback(null);
+    });
+  });
+};
+
+/*
  * Updates an existing application. Currently only supports name change.
  *
  * @param {uuid} id                       ID for the application
@@ -351,6 +382,32 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
     if (response.statusCode !== 200) return callback(that._convertErrors(response));
 
     return callback(null);
+  });
+};
+
+/*
+ * Deletes a notification server and all records.
+ *
+ * @param {string} applicationId            Application ID to link to the server
+ * @param {function} callback               Callback when complete (err)
+ * @returns {string} err                    Error message if error occurs
+ */
+CleanSpeak.prototype._deleteNotificationServer = function(applicationId, path, callback) {
+  var query, params, that = this;
+
+  this.pg.connect(this.databaseUrl, function(err, client, done) {
+    var uri = url.resolve(that.notificationHost, path);
+    if (!uri) return callback('Error while build URI. noticationHost: ', that.notificationHost, ', path: ', path);
+    if (err) return callback('error fetching client from pool', err);
+
+    query = 'DELETE FROM notification_servers WHERE url = $1';
+    params = [uri];
+    client.query(query, params, function(err) {
+      done();
+      if (err) return callback(err);
+
+      return callback(null);
+    });
   });
 };
 
