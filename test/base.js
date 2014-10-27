@@ -400,7 +400,7 @@ describe('CleanSpeak', function() {
         }
       ];
 
-      cleanSpeak.moderate(content, {contentId: contentId, userId: senderId, applicationId: applicationId, requiresApproval: true}, function(err) {
+      cleanSpeak.moderate(content, {contentId: contentId, senderId: senderId, applicationId: applicationId, requiresApproval: true}, function(err) {
         expect(err).to.be.null;
 
         done();
@@ -421,7 +421,7 @@ describe('CleanSpeak', function() {
         }
       ];
 
-      cleanSpeak.moderate(content, {contentId: contentId, userId: uuid(), applicationId: uuid(), update: true}, function(err) {
+      cleanSpeak.moderate(content, {contentId: contentId, senderId: uuid(), applicationId: uuid(), update: true}, function(err) {
         expect(err).to.be.null;
 
         done();

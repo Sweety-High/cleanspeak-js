@@ -75,19 +75,20 @@ CleanSpeak.prototype.filter = function(content, opts, callback) {
 /*
  * Sends content for moderation.
  *
- * @param {array} content               Array of parts that make up the item.
- * @param {string} content[x].name      Name of the content part (must be unique).
- * @param {string} content[x].content   The actual content for the part, such as text (for type 'text') or a URL
- *                                        (for type 'image').
- * @param {string} content[x].type      The type of the content part.
- *                                        Valid types: text, attribute, hyperlink, image, video, audio
- * @param {string} opts.contentId       UUID for the content.
- * @param {string} opts.userId          UUID for the user who owns the content.
- * @param {string} opts.applicationId   UUID for the application the content is associated with (affects notifications).
- * @param {bool} opts.requiresApproval  Whether or not the content is sent to the queue even if no filter is hit
- * @param {bool} opts.generatesAlert    Whether or not the content is sent to the alert queue
- * @param {function} callback           Callback function (err)
- * @returns {string} err                Error message if an error occurs
+ * @param {array} content                     Array of parts that make up the item.
+ * @param {string} content[x].name            Name of the content part (must be unique).
+ * @param {string} content[x].content         The actual content for the part, such as text (for type 'text') or a URL
+ *                                              (for type 'image').
+ * @param {string} content[x].type            The type of the content part.
+ *                                              Valid types: text, attribute, hyperlink, image, video, audio
+ * @param {uuid} opts.contentId               UUID for the content.
+ * @param {uuid} opts.senderId                UUID for the user who owns the content.
+ * @param {string} opts.senderDisplayName     Name for the user who owns the content.
+ * @param {uuid} opts.applicationId           UUID for the application the content is associated with (affects notifications).
+ * @param {bool} opts.requiresApproval        Whether or not the content is sent to the queue even if no filter is hit
+ * @param {bool} opts.generatesAlert          Whether or not the content is sent to the alert queue
+ * @param {function} callback                 Callback function (err)
+ * @returns {string} err                      Error message if an error occurs
  *
  * Example:
  * [
@@ -126,7 +127,8 @@ CleanSpeak.prototype.moderate = function(content, opts, callback) {
       applicationId: opts.applicationId,
       createInstant: new Date().valueOf(),
       parts: content,
-      senderId: opts.userId
+      senderId: opts.senderId,
+      senderDisplayName: opts.senderDisplayName
     },
     moderation: queueOption
   };
