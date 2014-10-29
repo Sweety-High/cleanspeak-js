@@ -41,23 +41,6 @@ describe('CleanSpeak', function() {
         expect(cleanSpeak.enabled).to.be.false;
       });
     });
-
-    describe('queue options', function() {
-      it('sets default attempts and priority', function() {
-        defaultOptions.queue = {};
-        cleanSpeak = new CleanSpeak(defaultOptions);
-        expect(cleanSpeak.queueOpts.attempts).to.equal(5);
-        expect(cleanSpeak.queueOpts.priority).to.equal('normal');
-      });
-
-      it('allows attempt and priority overrides', function() {
-        defaultOptions.queue = {};
-        defaultOptions.queueOpts = { attempts: 10, priority: 'high' };
-        cleanSpeak = new CleanSpeak(defaultOptions);
-        expect(cleanSpeak.queueOpts.attempts).to.equal(10);
-        expect(cleanSpeak.queueOpts.priority).to.equal('high');
-      });
-    });
   });
 
   describe('filter', function() {
@@ -445,8 +428,8 @@ describe('CleanSpeak', function() {
       var queueSpy;
 
       beforeEach(function() {
-        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { queue: {} }));
-        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(queue, data, callback) {
+        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { ironClient: {} }));
+        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(jobName, data, callback) {
           callback(null);
         });
       });
@@ -540,8 +523,8 @@ describe('CleanSpeak', function() {
       var queueSpy;
 
       beforeEach(function() {
-        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { queue: {} }));
-        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(queue, data, callback) {
+        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { ironClient: {} }));
+        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(jobName, data, callback) {
           callback(null);
         });
       });
@@ -656,38 +639,28 @@ describe('CleanSpeak', function() {
   });
 
   describe('optional queue', function() {
-    var createSpy, attemptsSpy, prioritySpy, saveSpy, userId;
+    var ironClientSpy, userId;
 
     beforeEach(function() {
       userId = uuid();
-      var fakeQueue = { create: function() {} };
-      var fakeSave = { save: function() {} };
-      var fakeAttempts = { attempts: function() {} };
-      var fakePriority = { priority: function() {} };
-      createSpy = sinon.stub(fakeQueue, 'create').returns(fakeAttempts);
-      attemptsSpy = sinon.stub(fakeAttempts, 'attempts').returns(fakePriority);
-      prioritySpy = sinon.stub(fakePriority, 'priority').returns(fakeSave);
-      saveSpy = sinon.stub(fakeSave, 'save', function(callback) {
-        return callback(null);
+      var fakeQueue = { post: function() {} };
+      ironClientSpy = sinon.stub(fakeQueue, 'post', function(opts, callback) {
+        callback(null);
       });
       var options = _.merge(defaultOptions, {
-        queue: fakeQueue,
-        queueOpts: {
-          attempts: 10,
-          priority: 'high'
-        }
+        ironClient: fakeQueue
       });
       cleanSpeak = new CleanSpeak(options);
     });
 
-    it('writes to the queue', function(done) {
+    it('writes to IronMQ', function(done) {
       cleanSpeak.addUser(userId, function(err) {
         expect(err).to.not.exist;
-
-        expect(createSpy).to.have.been.calledWith('addUser', {userId: userId, opts: {}});
-        expect(attemptsSpy).to.have.been.calledWith(10);
-        expect(prioritySpy).to.have.been.calledWith('high');
-        expect(saveSpy).to.have.been.called;
+        expect(JSON.parse(ironClientSpy.args[0][0])).to.eql({
+          jobName: 'addUser',
+          userId: userId,
+          opts: {}
+        });
 
         done();
       });
