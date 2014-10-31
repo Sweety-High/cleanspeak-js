@@ -2,6 +2,7 @@
 var request = require('request');
 var url = require('url');
 var _ = require('lodash');
+var pg = require('pg');
 
 /*
  * Constructor, takes configuration from either passed-in variables or the environment.
@@ -11,7 +12,6 @@ var _ = require('lodash');
  * @param {string} opts.notificationHost        Hostname for the notification server. Used for accepting/rejecting moderation.
  * @param {string} opts.notificationUsername    Username for the notification server.
  * @param {string} opts.notificationPassword    Password for the notification server.
- * @param {string} opts.pg                      Postgres module (exposed for testing).
  * @param {string} opts.enabled                 Set to false to bypass all CleanSpeak methods (development mode).
  * @param {object} opts.ironClient              Optional IronMQ client for delayed processing.
  */
@@ -23,7 +23,6 @@ function CleanSpeak(opts) {
   this.notificationHost = opts.notificationHost;
   this.notificationUsername = opts.notificationUsername;
   this.notificationPassword = opts.notificationPassword;
-  this.pg = opts.pg || require('pg'); // inject for testing
   this.enabled = typeof opts.enabled !== 'undefined' ? opts.enabled : true;
   this.ironClient = opts.ironClient;
 }
@@ -382,7 +381,7 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
 CleanSpeak.prototype._deleteNotificationServer = function(applicationId, path, callback) {
   var query, params, that = this;
 
-  this.pg.connect(this.databaseUrl, function(err, client, done) {
+  pg.connect(this.databaseUrl, function(err, client, done) {
     var uri = url.resolve(that.notificationHost, path);
     if (!uri) return callback('Error while build URI. noticationHost: ', that.notificationHost, ', path: ', path);
     if (err) return callback('error fetching client from pool', err);
@@ -409,7 +408,7 @@ CleanSpeak.prototype._deleteNotificationServer = function(applicationId, path, c
 CleanSpeak.prototype._createNotificationServer = function(applicationId, path, callback) {
   var that = this;
 
-  this.pg.connect(this.databaseUrl, function(err, client, done) {
+  pg.connect(this.databaseUrl, function(err, client, done) {
     var uri = url.resolve(that.notificationHost, path);
     if (!uri) return callback('Error while build URI. noticationHost: ', that.notificationHost, ', path: ', path);
     if (err) return callback('error fetching client from pool', err);
@@ -460,15 +459,15 @@ CleanSpeak.prototype._convertFilterResponse = function(body) {
 CleanSpeak.prototype._convertErrors = function(response) {
   try {
     var jsonData = JSON.parse(response.body);
-    return {
+    return JSON.stringify({
       statusCode: response.statusCode,
       message: jsonData
-    };
+    });
   } catch(e) {
-    return {
+    return JSON.stringify({
       statusCode: response.statusCode,
       message: response.body
-    };
+    });
 
   }
 };

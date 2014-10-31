@@ -8,11 +8,13 @@ var sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 
 var uuid = require('uuid');
-var CleanSpeak = require('../index');
 var chance = require('chance').Chance();
 var nock = require('nock');
 nock.disableNetConnect();
 var _ = require('lodash');
+
+var rewire = require('rewire');
+var CleanSpeak = rewire('../index');
 
 describe('CleanSpeak', function() {
   var cleanSpeak, mockRequest, content, defaultOptions;
@@ -122,6 +124,7 @@ describe('CleanSpeak', function() {
           return callback(null, fakeClient, done);
         }
       };
+      CleanSpeak.__set__('pg', fakePg);
       var options = defaultOptions;
       options.pg = fakePg;
       cleanSpeak = new CleanSpeak(options);
@@ -673,7 +676,7 @@ describe('CleanSpeak', function() {
     });
 
     describe('when the server returns an error in JSON format', function() {
-      it('returns the error in a standard format', function() {
+      it('returns the error in a standard format', function(done) {
         mockRequest = nock('http://cleanspeak.example.com:8001')
           .post('/content/item/filter')
           .reply(400, JSON.stringify({
@@ -685,7 +688,7 @@ describe('CleanSpeak', function() {
             ]
           }));
         cleanSpeak.filter('error', function(err) {
-          expect(err).to.eql({
+          expect(JSON.parse(err)).to.eql({
             statusCode: 400,
             message: {
               generalErrors: [
@@ -696,20 +699,22 @@ describe('CleanSpeak', function() {
               ]
             }
           });
+          done();
         });
       });
     });
 
     describe('when the server returns a non-JSON error', function() {
-      it('returns the error in a standard format', function() {
+      it('returns the error in a standard format', function(done) {
         mockRequest = nock('http://cleanspeak.example.com:8001')
           .post('/content/item/filter')
           .reply(400, 'There was a problem, contact Inversoft');
         cleanSpeak.filter('error', function(err) {
-          expect(err).to.eql({
+          expect(JSON.parse(err)).to.eql({
             statusCode: 400,
             message: 'There was a problem, contact Inversoft'
           });
+          done();
         });
       });
     });
