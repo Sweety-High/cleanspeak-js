@@ -13,7 +13,6 @@ var pg = require('pg');
  * @param {string} opts.notificationUsername    Username for the notification server.
  * @param {string} opts.notificationPassword    Password for the notification server.
  * @param {string} opts.enabled                 Set to false to bypass all CleanSpeak methods (development mode).
- * @param {object} opts.ironClient              Optional IronMQ client for delayed processing.
  */
 function CleanSpeak(opts) {
   this.host = opts.host;
@@ -24,7 +23,6 @@ function CleanSpeak(opts) {
   this.notificationUsername = opts.notificationUsername;
   this.notificationPassword = opts.notificationPassword;
   this.enabled = typeof opts.enabled !== 'undefined' ? opts.enabled : true;
-  this.ironClient = opts.ironClient;
 }
 
 /*
@@ -159,7 +157,6 @@ CleanSpeak.prototype.flagContent = function(contentId, reporterId, opts, callbac
     opts = {};
   }
   if (!this.enabled) return callback(null);
-  if (this.ironClient) return this._addQueue('flagContent',  {contentId: contentId, reporterId: reporterId, opts: opts}, callback);
 
   var headers = {
     Authentication: this.authToken,
@@ -207,7 +204,6 @@ CleanSpeak.prototype.addUser = function(userId, opts, callback) {
     opts = {};
   }
   if (!this.enabled) return callback(null);
-  if (this.ironClient) return this._addQueue('addUser', {userId: userId, opts: opts}, callback);
 
   if (opts.lastLoginInstant instanceof Date) opts.lastLoginInstant = opts.lastLoginInstant.valueOf();
 
@@ -470,15 +466,6 @@ CleanSpeak.prototype._convertErrors = function(response) {
     });
 
   }
-};
-
-CleanSpeak.prototype._addQueue = function(jobName, data, callback) {
-  data.jobName = jobName;
-  this.ironClient.post(JSON.stringify(data), function(err) {
-    if (err) return callback(err);
-
-    callback(null);
-  });
 };
 
 module.exports = CleanSpeak;

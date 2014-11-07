@@ -426,34 +426,6 @@ describe('CleanSpeak', function() {
         });
       });
     });
-
-    describe('when a queue is available', function() {
-      var queueSpy;
-
-      beforeEach(function() {
-        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { ironClient: {} }));
-        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(jobName, data, callback) {
-          callback(null);
-        });
-      });
-
-      it('adds the request to the queue', function(done) {
-        var contentId = uuid();
-        content = [
-          {
-            name: 'username',
-            content: 'iamagirl',
-            type: 'text'
-          }
-        ];
-        cleanSpeak.moderate(content, {contentId: contentId}, function() {
-          expect(queueSpy.args[0][0]).to.equal('moderate');
-          expect(queueSpy.args[0][1]).to.eql({ content: content, opts: {contentId: contentId}});
-
-          done();
-        });
-      });
-    });
   });
 
   describe('flagContent', function() {
@@ -516,28 +488,6 @@ describe('CleanSpeak', function() {
         cleanSpeak.flagContent(uuid(), uuid(), function(err, result) {
           expect(err).to.not.exist;
           expect(result).to.not.exist;
-
-          done();
-        });
-      });
-    });
-
-    describe('when a queue is available', function() {
-      var queueSpy;
-
-      beforeEach(function() {
-        cleanSpeak = new CleanSpeak(_.merge(defaultOptions, { ironClient: {} }));
-        queueSpy = sinon.stub(cleanSpeak, '_addQueue', function(jobName, data, callback) {
-          callback(null);
-        });
-      });
-
-      it('adds the request to the queue', function(done) {
-        var contentId = uuid();
-        var reporterId = uuid();
-        cleanSpeak.flagContent(contentId, reporterId, function() {
-          expect(queueSpy.args[0][0]).to.equal('flagContent');
-          expect(queueSpy.args[0][1]).to.eql({ contentId: contentId, reporterId: reporterId, opts: {}});
 
           done();
         });
@@ -637,35 +587,6 @@ describe('CleanSpeak', function() {
 
           done();
         });
-      });
-    });
-  });
-
-  describe('optional queue', function() {
-    var ironClientSpy, userId;
-
-    beforeEach(function() {
-      userId = uuid();
-      var fakeQueue = { post: function() {} };
-      ironClientSpy = sinon.stub(fakeQueue, 'post', function(opts, callback) {
-        callback(null);
-      });
-      var options = _.merge(defaultOptions, {
-        ironClient: fakeQueue
-      });
-      cleanSpeak = new CleanSpeak(options);
-    });
-
-    it('writes to IronMQ', function(done) {
-      cleanSpeak.addUser(userId, function(err) {
-        expect(err).to.not.exist;
-        expect(JSON.parse(ironClientSpy.args[0][0])).to.eql({
-          jobName: 'addUser',
-          userId: userId,
-          opts: {}
-        });
-
-        done();
       });
     });
   });
