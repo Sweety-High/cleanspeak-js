@@ -312,7 +312,8 @@ describe('CleanSpeak', function() {
       mockRequest = nock('http://cleanspeak.example.com:8001')
         .put('/system/application/' + id, {
           application: {
-            name: name
+            name: name,
+            moderationConfiguration: {}
           }
         })
         .reply(200, {});

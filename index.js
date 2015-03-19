@@ -331,12 +331,20 @@ CleanSpeak.prototype.deleteApplication = function(id, opts, callback) {
 };
 
 /*
- * Updates an existing application. Currently only supports name change.
+ * Updates an existing application.
  *
- * @param {uuid} id                       ID for the application
- * @param {string} opts.name              Name for the application
- * @param {callback} function             Callback when complete (err, result)
- * @returns {string} err                  Error message if error occurs
+ * @param {uuid} id                                     ID for the application
+ * @param {string} opts.name                            Name for the application
+ * @param {bool} opts.storeContent                      true if all content should be stored in CleanSpeak's database.
+ * @param {bool} opts.persistent                        true if content should be persistent (eligible for moderation).
+ *                                                        Defaults to false (transient).
+ * @param {bool} opts.contentEditable                   true if the content in the application can be edited by moderators.
+ * @param {bool} opts.contentDeletable                  true if the content in the application can be delete by moderators.
+ * @param {bool} opts.defaultActionIsQueueForApproval   true if all content should be queued (pre-moderation).
+ *                                                        If false, this can still be set on individual moderation calls.
+ * @param {bool} opts.contentUserActionsEnabled         true if users in this application can be actioned by moderators.
+ * @param {callback} function                           Callback when complete (err, result)
+ * @returns {string} err                                Error message if error occurs
  *
  */
 CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
@@ -351,9 +359,19 @@ CleanSpeak.prototype.updateApplication = function(id, opts, callback) {
     Authentication: this.authToken,
     'Content-Type': 'application/json'
   };
+
+  var moderationOpts = _.pick(opts, [
+    'contentDeletable',
+    'contentEditable',
+    'contentUserActionsEnabled',
+    'defaultActionIsQueueForApproval',
+    'persistent',
+    'storeContent'
+  ]);
   var body = {
     application: {
-      name: opts.name
+      name: opts.name,
+      moderationConfiguration: moderationOpts
     }
   };
 
